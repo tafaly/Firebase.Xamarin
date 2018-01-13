@@ -5,7 +5,7 @@
     /// <summary>
     /// The firebase auth.
     /// </summary>
-    public class FirebaseAuth
+    public partial class FirebaseAuth
     {
         /// <summary>
         /// Gets or sets the firebase token which can be used for authenticated queries. 

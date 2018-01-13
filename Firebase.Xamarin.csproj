@@ -37,10 +37,13 @@
     <Compile Include="Auth\FirebaseAuth.cs" />
     <Compile Include="Auth\FirebaseAuthLink.cs" />
     <Compile Include="Auth\FirebaseAuthProvider.cs" />
+    <Compile Include="Auth\FirebaseAuthProvider_Fab.cs" />
     <Compile Include="Auth\FirebaseAuthType.cs" />
+    <Compile Include="Auth\FirebaseAuth_Fab.cs" />
     <Compile Include="Auth\FirebaseConfig.cs" />
     <Compile Include="Auth\IFirebaseAuthProvider.cs" />
     <Compile Include="Auth\User.cs" />
+    <Compile Include="Auth\User_Fab.cs" />
     <Compile Include="Database\FirebaseClient.cs" />
     <Compile Include="Database\FirebaseKeyGenerator.cs" />
     <Compile Include="Database\FirebaseObject.cs" />
@@ -75,6 +78,15 @@
     <Compile Include="Notification\PushNotification.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
+      <HintPath>..\..\..\Documents\Visual Studio 2017\Projects\Tafaly.RYD\packages\Portable.BouncyCastle.1.8.1.3\lib\portable-net40+sl5+win8+wp8+wpa81\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
+    <Reference Include="JWT, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\Documents\Visual Studio 2017\Projects\Tafaly.RYD\packages\Portable.JWT.1.0.5\lib\portable-net45+win+wpa81+wp80+MonoAndroid10+xamarinios10+MonoTouch10\JWT.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\Documents\Visual Studio 2017\Projects\Tafaly.RYD\packages\Newtonsoft.Json.10.0.3\lib\portable-net45+win8+wp8+wpa81\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Rx-Core.2.2.5\lib\portable-net45+winrt45+wp8+wpa81\System.Reactive.Core.dll</HintPath>
       <Private>True</Private>
@@ -91,23 +103,12 @@
       <HintPath>packages\Rx-PlatformServices.2.2.5\lib\portable-net45+winrt45+wp8+wpa81\System.Reactive.PlatformServices.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="crypto">
-      <HintPath>packages\Portable.BouncyCastle.1.8.0\lib\portable-net45+win8+wpa81+MonoTouch10+MonoAndroid10+xamarinmac20+xamarinios10\crypto.dll</HintPath>
-    </Reference>
-    <Reference Include="JWT">
-      <HintPath>packages\Portable.JWT.1.0.5\lib\portable-net45+win+wpa81+wp80+MonoAndroid10+xamarinios10+MonoTouch10\JWT.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>packages\Newtonsoft.Json.9.0.1\lib\portable-net45+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Token\" />
-    <Folder Include="Notification\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

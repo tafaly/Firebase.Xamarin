@@ -23,6 +23,11 @@
         /// <summary>
         /// The twitter auth. 
         /// </summary> 
-        Twitter
-    } 
+        Twitter,
+
+        /// <summary>
+        /// The Phone number auth. 
+        /// </summary> 
+        Phone,
+    }
 }

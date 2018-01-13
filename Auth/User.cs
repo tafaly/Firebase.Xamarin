@@ -7,7 +7,7 @@
     /// <summary>
     /// Basic information about the logged in user.
     /// </summary>
-    public class User
+    public partial class User
     {
         /// <summary>
         /// Gets or sets the local id.
