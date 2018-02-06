@@ -7,7 +7,7 @@
     /// <summary>
     /// Represents an object stored in offline storage.
     /// </summary>
-    public class OfflineEntry
+    public class OfflineEntry: BaseOfflineEntry
     {
         private object dataInstance;
 
@@ -39,7 +39,7 @@
         /// <summary>
         /// Gets or sets the key of this entry.
         /// </summary>
-        public string Key
+        public override string Key
         {
             get;
             set;
@@ -90,5 +90,9 @@
         {
             return (T)(this.dataInstance ?? (this.dataInstance = JsonConvert.DeserializeObject<T>(this.Data)));
         }
+    }
+    public class BaseOfflineEntry
+    {
+       public virtual string Key { get; set; }
     }
 }
