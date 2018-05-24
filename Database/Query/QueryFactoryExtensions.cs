@@ -1,4 +1,4 @@
-namespace Firebase.Xamarin.Database.Query
+namespace Firebase.Database.Query
 {
     using System;
 
@@ -13,7 +13,7 @@ namespace Firebase.Xamarin.Database.Query
         /// <param name="node"> The child. </param>
         /// <param name="tokenFactory"> The auth token. </param>
         /// <returns> The <see cref="AuthQuery"/>. </returns>
-        public static AuthQuery WithAuth(this FirebaseQuery node, Func<string> tokenFactory)
+        internal static AuthQuery WithAuth(this FirebaseQuery node, Func<string> tokenFactory)
         {
             return new AuthQuery(node, tokenFactory, node.Client);
         }
@@ -139,6 +139,17 @@ namespace Firebase.Xamarin.Database.Query
         {
             return new FilterQuery(child, () => "equalTo", valueFactory, child.Client);
         }
+		
+        /// <summary>
+        /// Instructs firebase to send data equal to the <see cref="valueFactory"/>. This must be preceded by an OrderBy query.
+        /// </summary>
+        /// <param name="child"> Current node. </param>
+        /// <param name="valueFactory"> Value to start at. </param>
+        /// <returns> The <see cref="FilterQuery"/>. </returns>
+        public static FilterQuery EqualTo(this ParameterQuery child, Func<bool> valueFactory)
+        {
+            return new FilterQuery(child, () => "equalTo", valueFactory, child.Client);
+        }		
 
         /// <summary>
         /// Limits the result to first <see cref="countFactory"/> items.

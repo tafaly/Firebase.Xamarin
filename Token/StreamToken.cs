@@ -2,7 +2,7 @@
 {
 	using System;
 	using System.Reactive.Linq;
-	using Firebase.Xamarin.Database.Streaming;
+	using Firebase.Database.Streaming;
 
 	public class StreamToken<T> : IDisposable
 	{

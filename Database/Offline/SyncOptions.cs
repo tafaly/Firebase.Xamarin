@@ -1,4 +1,4 @@
-﻿namespace Firebase.Xamarin.Database.Offline
+﻿namespace Firebase.Database.Offline
 {
     /// <summary>
     /// Specifies type of sync requested for given data.
@@ -16,8 +16,13 @@
         Pull,
 
         /// <summary>
-        /// Data should be pushed to firebase.
+        /// Data should be put to firebase.
         /// </summary>
-        Push
+        Put,
+
+        /// <summary>
+        /// Data should be patched in firebase.
+        /// </summary>
+        Patch
     }
 }

@@ -1,4 +1,4 @@
-namespace Firebase.Xamarin.Database
+namespace Firebase.Database
 {
     using System;
     using System.Text;

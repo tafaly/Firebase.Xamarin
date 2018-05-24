@@ -1,4 +1,4 @@
-namespace Firebase.Xamarin.Database.Query
+namespace Firebase.Database.Query
 {
     using System;
 
@@ -15,7 +15,7 @@ namespace Firebase.Xamarin.Database.Query
         /// <param name="parent"> The parent.  </param>  
         /// <param name="tokenFactory"> The authentication token factory. </param>
         /// <param name="client"> The owner. </param>
-        public AuthQuery(FirebaseQuery parent, Func<string> tokenFactory, FirebaseClient client) : base(parent, () => "auth", client)
+        public AuthQuery(FirebaseQuery parent, Func<string> tokenFactory, FirebaseClient client) : base(parent, () => client.Options.AsAccessToken ? "access_token" : "auth", client)
         {
             this.tokenFactory = tokenFactory;
         }

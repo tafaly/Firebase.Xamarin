@@ -1,4 +1,4 @@
-namespace Firebase.Xamarin.Database.Streaming
+namespace Firebase.Database.Streaming
 {
     /// <summary>
     /// The type of event. 

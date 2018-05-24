@@ -1,19 +1,23 @@
-namespace Firebase.Xamarin.Database
+using System.Net.Http;
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Firebase.Database.Tests")]
+
+namespace Firebase.Database
 {
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
-    using Firebase.Xamarin.Database.Offline;
-    using Firebase.Xamarin.Database.Query;
+    using Firebase.Database.Offline;
+    using Firebase.Database.Query;
 
     /// <summary>
     /// Firebase client which acts as an entry point to the online database.
     /// </summary>
-    public class FirebaseClient
+    public class FirebaseClient : IDisposable
     {
-        internal readonly Func<Type, string, IDictionary<string, OfflineEntry>> OfflineDatabaseFactory;
-        internal readonly Func<Task<string>> AuthTokenAsyncFactory;
+        internal readonly HttpClient HttpClient;
+        internal readonly FirebaseOptions Options;
 
         private readonly string baseUrl;
 
@@ -21,18 +25,11 @@ namespace Firebase.Xamarin.Database
         /// Initializes a new instance of the <see cref="FirebaseClient"/> class.
         /// </summary>
         /// <param name="baseUrl"> The base url. </param>
-        public FirebaseClient(string baseUrl) : this(baseUrl, (t, s) => new Dictionary<string, OfflineEntry>())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FirebaseClient"/> class.
-        /// </summary>
-        /// <param name="baseUrl"> The base url. </param>
         /// <param name="offlineDatabaseFactory"> Offline database. </param>  
-        public FirebaseClient(string baseUrl, Func<Type, string, IDictionary<string, OfflineEntry>> offlineDatabaseFactory)
+        public FirebaseClient(string baseUrl, FirebaseOptions options = null)
         {
-            this.OfflineDatabaseFactory = offlineDatabaseFactory;
+            this.HttpClient = new HttpClient();
+            this.Options = options ?? new FirebaseOptions();
 
             this.baseUrl = baseUrl;
 
@@ -43,28 +40,6 @@ namespace Firebase.Xamarin.Database
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FirebaseClient"/> class.
-        /// </summary>
-        /// <param name="baseUrl"> The base url. </param>
-        /// <param name="authTokenAsyncFactory"> Factory which returns valid firebase auth token. </param>
-        public FirebaseClient(string baseUrl, Func<Task<string>> authTokenAsyncFactory) 
-            : this(baseUrl, authTokenAsyncFactory, (t, s) => new Dictionary<string, OfflineEntry>())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FirebaseClient"/> class.
-        /// </summary>
-        /// <param name="baseUrl"> The base url. </param>
-        /// <param name="authTokenAsyncFactory"> Factory which returns valid firebase auth token. </param>
-        /// <param name="offlineDatabaseFactory"> Offline database. </param>   
-        public FirebaseClient(string baseUrl, Func<Task<string>> authTokenAsyncFactory, Func<Type, string, IDictionary<string, OfflineEntry>> offlineDatabaseFactory) 
-            : this(baseUrl, offlineDatabaseFactory)
-        {
-            this.AuthTokenAsyncFactory = authTokenAsyncFactory;
-        }
-
-        /// <summary>
         /// Queries for a child of the data root.
         /// </summary>
         /// <param name="resourceName"> Name of the child. </param>
@@ -72,6 +47,11 @@ namespace Firebase.Xamarin.Database
         public ChildQuery Child(string resourceName)
         {
             return new ChildQuery(this, () => this.baseUrl + resourceName);
+        }
+
+        public void Dispose()
+        {
+            HttpClient?.Dispose();
         }
     }
 }

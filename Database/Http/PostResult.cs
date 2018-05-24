@@ -1,4 +1,4 @@
-namespace Firebase.Xamarin.Database.Http
+namespace Firebase.Database.Http
 {
     /// <summary>
     /// Represents data returned after a successful POST to firebase server.

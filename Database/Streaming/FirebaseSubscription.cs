@@ -1,17 +1,17 @@
-namespace Firebase.Xamarin.Database.Streaming
+namespace Firebase.Database.Streaming
 {
     using System;
     using System.Diagnostics;
-    using System.IO;
     using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Firebase.Xamarin.Database.Query;
+    using Firebase.Database.Query;
 
     using Newtonsoft.Json.Linq;
+    using System.Net;
 
     /// <summary>
     /// The firebase subscription.
@@ -20,11 +20,29 @@ namespace Firebase.Xamarin.Database.Streaming
     internal class FirebaseSubscription<T> : IDisposable
     {
         private readonly CancellationTokenSource cancel;
-        private readonly HttpClient httpClient;
         private readonly IObserver<FirebaseEvent<T>> observer;
         private readonly IFirebaseQuery query;
         private readonly FirebaseCache<T> cache;
         private readonly string elementRoot;
+        private readonly FirebaseClient client;
+
+        private static HttpClient http;
+
+        static FirebaseSubscription()
+        {
+            var handler = new HttpClientHandler
+            {
+                AllowAutoRedirect = true,
+                MaxAutomaticRedirections = 10,
+                CookieContainer = new CookieContainer()
+            };
+
+            var httpClient = new HttpClient(handler, true);
+
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+
+            http = httpClient;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FirebaseSubscription{T}"/> class.
@@ -38,32 +56,20 @@ namespace Firebase.Xamarin.Database.Streaming
             this.query = query;
             this.elementRoot = elementRoot;
             this.cancel = new CancellationTokenSource();
-            this.httpClient = new HttpClient();
             this.cache = cache;
-
-            var handler = new HttpClientHandler
-            {
-                AllowAutoRedirect = true,
-                MaxAutomaticRedirections = 10,
-            };
-
-            this.httpClient = new HttpClient(handler, true)
-            {
-                Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite),
-            };
-
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+            this.client = query.Client;
         }
+
+        public event EventHandler<ExceptionEventArgs<FirebaseException>> ExceptionThrown;
 
         public void Dispose()
         {
-            this.httpClient.Dispose();
             this.cancel.Cancel();
         }
 
         public IDisposable Run()
         {
-            Task.Factory.StartNew(this.ReceiveThread);
+            Task.Run(() => this.ReceiveThread());
 
             return this;
         }
@@ -72,41 +78,48 @@ namespace Firebase.Xamarin.Database.Streaming
         {
             while (true)
             {
+                var url = string.Empty;
+                var line = string.Empty;
+                var statusCode = HttpStatusCode.OK;
+
                 try
                 {
                     this.cancel.Token.ThrowIfCancellationRequested();
 
                     // initialize network connection
+                    url = await this.query.BuildUrlAsync().ConfigureAwait(false);
+                    var request = new HttpRequestMessage(HttpMethod.Get, url);
                     var serverEvent = FirebaseServerEventType.KeepAlive;
-                    var request = new HttpRequestMessage(HttpMethod.Get, await this.query.BuildUrlAsync().ConfigureAwait(false));
-                    var response = await this.httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, this.cancel.Token).ConfigureAwait(false);
 
+                    var client = this.GetHttpClient();
+                    var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, this.cancel.Token).ConfigureAwait(false);
+
+                    statusCode = response.StatusCode;
                     response.EnsureSuccessStatusCode();
 
                     using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                    using (var reader = new StreamReader(stream))
+                    using (var reader = this.client.Options.SubscriptionStreamReaderFactory(stream))
                     {
                         while (true)
                         {
-                            var line = reader.ReadLine();
-
                             this.cancel.Token.ThrowIfCancellationRequested();
+
+                            line = reader.ReadLine()?.Trim();
 
                             if (string.IsNullOrWhiteSpace(line))
                             {
-                                await Task.Delay(2000).ConfigureAwait(false);
                                 continue;
                             }
 
                             var tuple = line.Split(new[] { ':' }, 2, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
-
+                            
                             switch (tuple[0].ToLower())
                             {
                                 case "event":
                                     serverEvent = this.ParseServerEvent(serverEvent, tuple[1]);
                                     break;
                                 case "data":
-                                    this.ProcessServerData(serverEvent, tuple[1]);
+                                    this.ProcessServerData(url, serverEvent, tuple[1]);
                                     break;
                             }
 
@@ -122,11 +135,16 @@ namespace Firebase.Xamarin.Database.Streaming
                 {
                     break;
                 }
+                catch (Exception ex) when (statusCode != HttpStatusCode.OK)
+                {
+                    this.observer.OnError(new FirebaseException(url, string.Empty, line, statusCode, ex));
+                    this.Dispose();
+                    break;
+                }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("************************************************************");
-                    Debug.WriteLine(ex.ToString());
-                    Debug.WriteLine("************************************************************");
+                    this.ExceptionThrown?.Invoke(this, new ExceptionEventArgs<FirebaseException>(new FirebaseException(url, string.Empty, line, statusCode, ex)));
+
                     await Task.Delay(2000).ConfigureAwait(false);
                 }
             }
@@ -156,7 +174,7 @@ namespace Firebase.Xamarin.Database.Streaming
             return serverEvent;
         }
 
-        private void ProcessServerData(FirebaseServerEventType serverEvent, string serverData)
+        private void ProcessServerData(string url, FirebaseServerEventType serverEvent, string serverData)
         {
             switch (serverEvent)
             {
@@ -165,27 +183,35 @@ namespace Firebase.Xamarin.Database.Streaming
                     var result = JObject.Parse(serverData);
                     var path = result["path"].ToString();
                     var data = result["data"].ToString();
+
+                    if (path == "/" && data == string.Empty)
+                    {
+                        this.observer.OnNext(FirebaseEvent<T>.Empty(FirebaseEventSource.OnlineStream));
+                        return;
+                    }
+
                     var eventType = string.IsNullOrWhiteSpace(data) ? FirebaseEventType.Delete : FirebaseEventType.InsertOrUpdate;
 
                     var items = this.cache.PushData(this.elementRoot + path, data);
 
                     foreach (var i in items.ToList())
                     {
-                        this.observer.OnNext(new FirebaseEvent<T>(i.Key, i.Object, eventType));
+                        this.observer.OnNext(new FirebaseEvent<T>(i.Key, i.Object, eventType, FirebaseEventSource.OnlineStream));
                     }
 
                     break;
                 case FirebaseServerEventType.KeepAlive:
                     break;
                 case FirebaseServerEventType.Cancel:
-                    this.observer.OnError(new Exception("cancel"));
+                    this.observer.OnError(new FirebaseException(url, string.Empty, serverData, HttpStatusCode.Unauthorized));
                     this.Dispose();
-                    throw new OperationCanceledException();
-                case FirebaseServerEventType.AuthRevoked:
-                    this.observer.OnError(new Exception("auth"));
-                    this.Dispose();
-                    throw new OperationCanceledException();
+                    break;
             }
+        }
+
+        private HttpClient GetHttpClient()
+        {
+            return http;
         }
     }
 }

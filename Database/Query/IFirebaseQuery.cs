@@ -1,16 +1,24 @@
-﻿namespace Firebase.Xamarin.Database.Query
+﻿namespace Firebase.Database.Query
 {
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
-    using Firebase.Xamarin.Database.Streaming;
+    using Firebase.Database.Streaming;
 
     /// <summary>
     /// The FirebaseQuery interface.
     /// </summary>
     public interface IFirebaseQuery
     {
+        /// <summary>
+        /// Gets the owning client of this query.
+        /// </summary>
+        FirebaseClient Client
+        {
+            get;
+        }
+
         /// <summary>
         /// Retrieves items which exist on the location specified by this query instance.
         /// </summary>
@@ -23,7 +31,7 @@
         /// </summary>
         /// <typeparam name="T"> Type of the items. </typeparam>
         /// <returns> Cold observable of <see cref="FirebaseEvent{T}"/>. </returns>
-        IObservable<FirebaseEvent<T>> AsObservable<T>(string elementRoot = "");
+        IObservable<FirebaseEvent<T>> AsObservable<T>(EventHandler<ExceptionEventArgs<FirebaseException>> exceptionHandler, string elementRoot = "");
 
         /// <summary>
         /// Builds the actual url of this query.

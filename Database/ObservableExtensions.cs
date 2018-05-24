@@ -1,9 +1,9 @@
-﻿namespace Firebase.Xamarin.Database
+﻿namespace Firebase.Database
 {
     using System;
     using System.Collections.ObjectModel;
 
-    using Firebase.Xamarin.Database.Streaming;
+    using Firebase.Database.Streaming;
 
     /// <summary>
     /// Extensions for <see cref="IObservable{T}"/>.

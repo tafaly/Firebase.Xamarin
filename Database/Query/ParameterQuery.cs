@@ -1,4 +1,4 @@
-namespace Firebase.Xamarin.Database.Query
+namespace Firebase.Database.Query
 {
     using System;
 
